@@ -1,12 +1,11 @@
 import string
-import time
 
 import torch
 import unidecode
 
 
 all_characters = string.printable
-n_characters = len(all_characters)
+n_all_characters = len(all_characters)
 
 
 def read_ascii(filename):
@@ -26,11 +25,3 @@ def char_tensor(s):
         except:
             continue
     return tensor
-
-
-def time_since(since):
-    """Readable string representation of the elapsed time (min, sec)"""
-    s = time.time() - since
-    m = s // 60
-    s -= m * 60
-    return '%dm:%ds' % (m, s)
