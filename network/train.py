@@ -6,6 +6,9 @@ import os
 import random
 import time
 
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -20,7 +23,7 @@ from network.model import CharRNN
 parser = argparse.ArgumentParser()
 parser.add_argument('textfile', type=str)
 parser.add_argument('--n-steps', type=int, default=20000)
-parser.add_argument('--print-every', type=int, default=100)
+parser.add_argument('--preview-every', type=int, default=100)
 parser.add_argument('--preview-primer', default='A')
 parser.add_argument('--preview-length', type=int, default=100)
 parser.add_argument('--hidden-size', type=int, default=100)
@@ -118,9 +121,11 @@ try:
             inp, target = inp.cuda(), target.cuda()
         loss = train(inp, target)
         loss_avg += loss
+        all_losses.append(loss)
 
-        if i % args.print_every == 0 and i > 0:
-            print(f'\n\nloss = {loss:.4f}')
+        if i % args.preview_every == 0 and i > 0:
+            print(f'\n\nloss = {loss_avg:.4f}')
+            loss_avg = 0
             preview_text = generate(
                 decoder,
                 prime_str=args.preview_primer,
@@ -128,6 +133,9 @@ try:
                 cuda=args.cuda
             )
             print('\n"""\n', preview_text, '\n"""\n')
+
+            plt.plot(all_losses)
+            plt.savefig('loss.png')
 
     print("Saving...")
     save()

@@ -110,3 +110,5 @@ ENV/
 
 # PyTorch model files
 *.pt
+
+loss.png
