@@ -39,7 +39,13 @@ with open(token_file) as f:
     token = f.readlines()[0].strip()
 
 # Load a trained RNN model. To produce one of these, use network/train.py
-decoder = torch.load(os.path.expanduser(cli_args.model_file))
+    try:
+        decoder = torch.load(os.path.expanduser(cli_args.model_file))
+    except AssertionError:  # Loading cuda model without --cuda
+        decoder = torch.load(
+            os.path.expanduser(cli_args.model_file),
+            map_location=lambda storage, loc: storage
+        )
 logger.info('Sucessfully loaded network model.')
 
 

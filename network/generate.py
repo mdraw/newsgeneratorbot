@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 
 import torch
 from torch.autograd import Variable
@@ -50,7 +51,13 @@ if __name__ == '__main__':
     parser.add_argument('--cuda', action='store_true')
     args = parser.parse_args()
 
-    decoder = torch.load(args.modelfile)
+    try:
+        decoder = torch.load(os.path.expanduser(args.modelfile))
+    except AssertionError:  # Loading cuda model without --cuda
+        decoder = torch.load(
+            os.path.expanduser(args.modelfile),
+            map_location=lambda storage, loc: storage
+        )
     generated_text = generate(
         decoder,
         args.prime_str,
