@@ -46,7 +46,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('modelfile', type=str)
     parser.add_argument('-p', '--prime-str', type=str, default='A')
-    parser.add_argument('-l', '--predict-len', type=int, default=100)
+    parser.add_argument('-l', '--predict-len', type=int, default=500)
     parser.add_argument('-t', '--temperature', type=float, default=0.8)
     parser.add_argument('--cuda', action='store_true')
     args = parser.parse_args()

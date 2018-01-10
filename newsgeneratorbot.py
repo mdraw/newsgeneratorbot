@@ -25,7 +25,7 @@ parser.add_argument(
     help='Trained RNN model (.pt file)'
 )
 parser.add_argument('-p', '--default-prime-str', type=str, default='A')
-parser.add_argument('-l', '--predict-len', type=int, default=100)
+parser.add_argument('-l', '--predict-len', type=int, default=500)
 parser.add_argument('-t', '--temperature', type=float, default=0.8)
 parser.add_argument('--cuda', action='store_true')
 parser.add_argument(
@@ -85,7 +85,7 @@ def main():
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler('hello', hello))
-    dp.add_handler(CommandHandler('write', write, pass_args=True))
+    dp.add_handler(CommandHandler('w', write, pass_args=True))
 
     dp.add_error_handler(error)
 
