@@ -124,7 +124,7 @@ try:
         all_losses.append(loss)
 
         if i % args.preview_every == 0 and i > 0:
-            print(f'\n\nloss = {loss_avg:.4f}')
+            print(f'\n\nloss = {loss_avg/args.preview_every:.4f}')
             loss_avg = 0
             preview_text = generate(
                 decoder,
