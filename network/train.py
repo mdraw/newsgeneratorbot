@@ -12,9 +12,9 @@ from torch.autograd import Variable
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 
-from generate import generate
-from helpers import read_ascii, char_tensor, n_all_characters
-from model import CharRNN
+from network.generate import generate
+from network.helpers import read_ascii, char_tensor, n_all_characters
+from network.model import CharRNN
 
 
 parser = argparse.ArgumentParser()

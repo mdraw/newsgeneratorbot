@@ -1,3 +1,4 @@
+import random
 import string
 
 import torch
@@ -25,3 +26,12 @@ def char_tensor(s):
         except:
             continue
     return tensor
+
+
+def random_letter(only_capital=True):
+    """Randomly select a letter from the alphabet"""
+    if only_capital:
+        letters = string.ascii_uppercase
+    else:
+        letters = string.ascii_letters
+    return random.choice(letters)

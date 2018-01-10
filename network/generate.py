@@ -5,7 +5,7 @@ import argparse
 import torch
 from torch.autograd import Variable
 
-from helpers import char_tensor, all_characters
+from network.helpers import char_tensor, all_characters
 
 
 def generate(decoder, prime_str='A', predict_len=100, temperature=0.8, cuda=False):
@@ -42,13 +42,13 @@ def generate(decoder, prime_str='A', predict_len=100, temperature=0.8, cuda=Fals
 
 # Run as standalone script
 if __name__ == '__main__':
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument('modelfile', type=str)
-    argparser.add_argument('-p', '--prime-str', type=str, default='A')
-    argparser.add_argument('-l', '--predict-len', type=int, default=100)
-    argparser.add_argument('-t', '--temperature', type=float, default=0.8)
-    argparser.add_argument('--cuda', action='store_true')
-    args = argparser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('modelfile', type=str)
+    parser.add_argument('-p', '--prime-str', type=str, default='A')
+    parser.add_argument('-l', '--predict-len', type=int, default=100)
+    parser.add_argument('-t', '--temperature', type=float, default=0.8)
+    parser.add_argument('--cuda', action='store_true')
+    args = parser.parse_args()
 
     decoder = torch.load(args.modelfile)
     generated_text = generate(
