@@ -1,0 +1,18 @@
+name: newsgeneratorbot
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - certifi
+  - future=0.16.*
+  - ipython=6.*
+  - matplotlib=2.1.*
+  - newspaper3k=0.2.*
+  - python=3.6.*
+  - pytorch=0.3.*
+  - tqdm=4.*
+  - unidecode=0.04.*
+  - pip:
+    - python-telegram-bot==9.0.*
+
