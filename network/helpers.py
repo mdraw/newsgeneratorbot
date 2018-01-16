@@ -2,19 +2,10 @@ import random
 import string
 
 import torch
-import unidecode
 
 
 all_characters = string.printable
 n_all_characters = len(all_characters)
-
-
-def read_ascii(filename):
-    """Read file and return its ascii transliteration (lossy)"""
-    with open(filename) as f:
-        content_raw = f.read()
-        content_ascii = unidecode.unidecode(content_raw)
-    return content_ascii
 
 
 def char_tensor(s):

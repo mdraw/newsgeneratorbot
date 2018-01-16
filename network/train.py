@@ -13,10 +13,12 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from torch.utils.data import Dataset, DataLoader
+from torch.utils.rnn import p
 from tqdm import tqdm
+from unidecode import unidecode
 
 from network.generate import generate
-from network.helpers import read_ascii, char_tensor, n_all_characters
+from network.helpers import char_tensor, n_all_characters
 from network.model import CharRNN
 
 
@@ -40,9 +42,11 @@ if args.cuda:
 
 
 # TODO: Maybe support lazy loading for large corpora
+# TODO: Try to use one line each as training samples, don't cut fixed-size chunks.
 class TextChunkDataset(Dataset):
     def __init__(self, filename, chunk_len, n_samples, batch_size=args.batch_size):
-        self.text = read_ascii(filename)
+        with open(filename) as f:
+            self.text = f.read()
         self.n_chars = len(self.text)
         self.n_samples = n_samples
         self.chunk_len = chunk_len
@@ -63,6 +67,51 @@ class TextChunkDataset(Dataset):
         # Currently abusing __len__ to be variable. I am not sure why we
         # should let this represent an actual epoch size.
         return self.n_samples * self.batch_size
+
+
+# Not working.
+class TextLineDatasetLazy(Dataset):
+    def __init__(self, filename):
+        self.file = open(filename)
+        self.line_offsets = []
+        offset = 0
+        for line in self.file:
+            self.line_offsets.append(offset)
+            offset += len(line.strip())
+        self.file.seek(0)
+
+    def __getitem__(self, index):
+        # TODO: Is the selection too specific? Should we randomly slice lines here?
+        self.file.seek(self.line_offsets[index])
+        line = self.file.readline()
+        # return line
+        inp_text = unidecode(line[:-1])
+        target_text = unidecode(line[1:])
+        inp = char_tensor(inp_text)
+        target = char_tensor(target_text)
+        return inp, target
+
+    def __len__(self):
+        return len(self.line_offsets)
+
+
+# Not working with DataLoader (requires dynamic/padded batching!)
+class TextLineDataset(Dataset):
+    def __init__(self, filename):
+        with open(filename) as f:
+            self.lines = f.readlines()
+
+    def __getitem__(self, index):
+        # TODO: Is the selection too specific? Should we randomly slice lines here?
+        line = self.lines[index]
+        inp_text = unidecode(line[:-1])
+        target_text = unidecode(line[1:])
+        inp = char_tensor(inp_text)
+        target = char_tensor(target_text)
+        return inp, target
+
+    def __len__(self):
+        return len(self.lines)
 
 
 def train(inp, target):
@@ -102,6 +151,7 @@ if args.cuda:
     decoder.cuda()
 
 train_data = TextChunkDataset(args.textfile, args.chunk_len, args.n_steps)
+# train_data = TextLineDataset(args.textfile)
 train_loader = DataLoader(
     train_data,
     batch_size=args.batch_size,
