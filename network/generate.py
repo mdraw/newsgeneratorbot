@@ -6,10 +6,13 @@ import os
 import torch
 from torch.autograd import Variable
 
-from network.helpers import char_tensor, all_characters
+from network.helpers import char_tensor, all_characters, ascii2german
 
 
-def generate(decoder, prime_str='A', predict_len=100, temperature=0.8, cuda=False):
+def generate(
+        decoder, prime_str='A', predict_len=100, temperature=0.8,
+        german=False, cuda=False
+):
     hidden = decoder.init_hidden(1)
     prime_input = Variable(char_tensor(prime_str).unsqueeze(0))
 
@@ -38,6 +41,8 @@ def generate(decoder, prime_str='A', predict_len=100, temperature=0.8, cuda=Fals
         if cuda:
             inp = inp.cuda()
 
+    if german:
+        predicted = ascii2german(predicted)
     return predicted
 
 
@@ -48,6 +53,9 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--prime-str', type=str, default='A')
     parser.add_argument('-l', '--predict-len', type=int, default=500)
     parser.add_argument('-t', '--temperature', type=float, default=0.8)
+    parser.add_argument('-g', '--german', action='store_true',
+        help='Convert digraphs in the generated text to German umlauts.'
+    )
     parser.add_argument('--cuda', action='store_true')
     args = parser.parse_args()
 
@@ -63,6 +71,7 @@ if __name__ == '__main__':
         args.prime_str,
         args.predict_len,
         args.temperature,
+        args.german,
         args.cuda
     )
     print(generated_text)

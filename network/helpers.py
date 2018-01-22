@@ -26,3 +26,16 @@ def random_letter(only_capital=True):
     else:
         letters = string.ascii_letters
     return random.choice(letters)
+
+
+def ascii2german(text):
+    """Convert digraphs in the text to German umlauts."""
+    trans = text\
+        .replace('ae', 'ä')\
+        .replace('oe', 'ö')\
+        .replace('ue', 'ü')\
+        .replace('Ae', 'Ä')\
+        .replace('Oe', 'Ö')\
+        .replace('Ue', 'Ü')\
+        # .replace('ss', 'ß')  # We can't decide if this was an actual ß
+    return trans

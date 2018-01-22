@@ -27,6 +27,9 @@ parser.add_argument('--n-steps', type=int, default=20000)
 parser.add_argument('--preview-every', type=int, default=100)
 parser.add_argument('--preview-primer', default='A')
 parser.add_argument('--preview-length', type=int, default=200)
+parser.add_argument('--preview-german', action='store_true',
+        help='Convert digraphs in the generated preview text to German umlauts.'
+)
 parser.add_argument('--hidden-size', type=int, default=100)
 parser.add_argument('--n-layers', type=int, default=2)
 parser.add_argument('--learning-rate', type=float, default=0.01)
@@ -184,6 +187,7 @@ try:
                 decoder,
                 prime_str=args.preview_primer,
                 predict_len=args.preview_length,
+                german=args.preview_german,
                 cuda=args.cuda
             )
             print('\n"""\n', preview_text, '\n"""\n')

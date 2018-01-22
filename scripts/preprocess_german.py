@@ -16,8 +16,10 @@ else:
     outpath = os.path.expanduser(args.output)
 
 
-def transliterate_german(text):
-    """Transliterate German-specific characters."""
+# TODO: Change german2ascii and ascii2german to use less ambiguous encoding
+#       (not the standard digraphs)
+def german2ascii(text):
+    """Transliterate German-specific characters to digraphs."""
     trans = text\
         .replace('ä', 'ae')\
         .replace('ö', 'oe')\
@@ -33,7 +35,7 @@ def main():
     with open(inpath) as infile:
         with open(outpath, 'w') as outfile:
             for line in infile.readlines():
-                transtext = transliterate_german(line)
+                transtext = german2ascii(line)
                 asciitext = unidecode(transtext)
                 outfile.write(asciitext)
 
