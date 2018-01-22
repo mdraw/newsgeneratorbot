@@ -13,6 +13,5 @@ dependencies:
   - pytorch=0.3.*
   - tqdm=4.*
   - unidecode=0.04.*
-  - pip:
-    - python-telegram-bot==9.0.*
+  - python-telegram-bot=9.0.*
 
