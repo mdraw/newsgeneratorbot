@@ -11,8 +11,14 @@ from network.helpers import char_tensor, all_characters, transliterate
 
 def generate(
         decoder, prime_str='A', predict_len=100, temperature=0.8,
-        german=False, cuda=False
+        german=False, until_first=None, until_last=None, min_predict_len=None, cuda=False
 ):
+    if until_first is not None and until_last is not None:
+        raise ValueError(
+            'You can\'t specify both `until_first` AND `until_last`.\n'
+            'Please decide for one of them and keep the other `None`.'
+        )
+
     hidden = decoder.init_hidden(1)
     prime_input = Variable(char_tensor(prime_str).unsqueeze(0))
 
@@ -37,9 +43,19 @@ def generate(
         # Add predicted character to string and use as next input
         predicted_char = all_characters[top_i]
         predicted += predicted_char
+        if predicted_char == until_first:
+            break
         inp = Variable(char_tensor(predicted_char).unsqueeze(0))
         if cuda:
             inp = inp.cuda()
+
+    if until_last is not None:
+        if min_predict_len is None:
+            min_predict_len = predict_len // 3
+        if until_last is not None:
+            end_index = predicted.rfind(until_last)
+        if end_index >= 0 and min_predict_len < end_index:
+            predicted = predicted[:end_index+1]
 
     if german:
         predicted = transliterate(predicted, mode='ascii2german')
@@ -51,8 +67,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('modelfile', type=str)
     parser.add_argument('-p', '--prime-str', type=str, default='A')
-    parser.add_argument('-l', '--predict-len', type=int, default=500)
+    parser.add_argument('-l', '--predict-len', type=int, default=1000)
     parser.add_argument('-t', '--temperature', type=float, default=0.8)
+    parser.add_argument('-f', '--until-first', default=None)
+    parser.add_argument('-u', '--until-last', default='.')
+    parser.add_argument('-m', '--min-predict-len', type=int, default=None)
     parser.add_argument('-g', '--german', action='store_true',
         help='Convert digraphs in the generated text to German umlauts.'
     )
@@ -67,11 +86,14 @@ if __name__ == '__main__':
             map_location=lambda storage, loc: storage
         )
     generated_text = generate(
-        decoder,
-        args.prime_str,
-        args.predict_len,
-        args.temperature,
-        args.german,
-        args.cuda
+        decoder=decoder,
+        prime_str=args.prime_str,
+        predict_len=args.predict_len,
+        temperature=args.temperature,
+        german=args.german,
+        until_first=args.until_first,
+        until_last=args.until_last,
+        min_predict_len=args.min_predict_len,
+        cuda=args.cuda
     )
     print(generated_text)
