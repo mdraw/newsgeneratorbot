@@ -13,7 +13,6 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from torch.utils.data import Dataset, DataLoader
-from torch.utils.rnn import p
 from tqdm import tqdm
 from unidecode import unidecode
 
@@ -27,7 +26,7 @@ parser.add_argument('textfile', type=str)
 parser.add_argument('--n-steps', type=int, default=20000)
 parser.add_argument('--preview-every', type=int, default=100)
 parser.add_argument('--preview-primer', default='A')
-parser.add_argument('--preview-length', type=int, default=100)
+parser.add_argument('--preview-length', type=int, default=200)
 parser.add_argument('--hidden-size', type=int, default=100)
 parser.add_argument('--n-layers', type=int, default=2)
 parser.add_argument('--learning-rate', type=float, default=0.01)
@@ -55,11 +54,13 @@ class TextChunkDataset(Dataset):
     def __getitem__(self, index):
         # index is currently currently ignored.
         # TODO: Respect index and defer randomization to DataLoader
-        start_index = random.randint(0, self.n_chars - self.chunk_len)
+        start_index = random.randint(0, self.n_chars - self.chunk_len - 1)
         end_index = start_index + self.chunk_len + 1
         chunk = self.text[start_index:end_index]
         inp = char_tensor(chunk[:-1])
         target = char_tensor(chunk[1:])
+        if not inp.shape[0] == self.chunk_len and inp.shape == target.shape:  # For debugging
+            import IPython ; IPython.embed()
         return inp, target
 
     def __len__(self):
@@ -72,6 +73,7 @@ class TextChunkDataset(Dataset):
 # Not working.
 class TextLineDatasetLazy(Dataset):
     def __init__(self, filename):
+        raise NotImplementedError
         self.file = open(filename)
         self.line_offsets = []
         offset = 0
@@ -98,6 +100,7 @@ class TextLineDatasetLazy(Dataset):
 # Not working with DataLoader (requires dynamic/padded batching!)
 class TextLineDataset(Dataset):
     def __init__(self, filename):
+        raise NotImplementedError
         with open(filename) as f:
             self.lines = f.readlines()
 
@@ -151,7 +154,6 @@ if args.cuda:
     decoder.cuda()
 
 train_data = TextChunkDataset(args.textfile, args.chunk_len, args.n_steps)
-# train_data = TextLineDataset(args.textfile)
 train_loader = DataLoader(
     train_data,
     batch_size=args.batch_size,
@@ -165,7 +167,9 @@ loss_avg = 0
 
 try:
     print("Training for %d steps..." % args.n_steps)
-    for i, (inp, target) in enumerate(tqdm(train_loader)):
+    # try:
+    for i, batch in enumerate(tqdm(train_loader)):
+        inp, target = batch
         inp, target = Variable(inp), Variable(target)
         if args.cuda:
             inp, target = inp.cuda(), target.cuda()
@@ -186,6 +190,13 @@ try:
 
             plt.plot(all_losses)
             plt.savefig('loss.png')
+    # except:
+    #     import traceback
+    #     traceback.print_exc()
+    #     cont = False
+    #     import IPython; IPython.embed()
+    #     if not cont:
+    #         raise SystemExit
 
     print("Saving...")
     save()
