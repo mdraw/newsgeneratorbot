@@ -37,5 +37,9 @@ def ascii2german(text):
         .replace('Ae', 'Ä')\
         .replace('Oe', 'Ö')\
         .replace('Ue', 'Ü')\
+        .replace('Qü', 'Qu')\
+        .replace('qü', 'qu')\
         # .replace('ss', 'ß')  # We can't decide if this was an actual ß
+    # (The "qü" replacement is necessary because e.g. "quer" would otherwise
+    # be transliterated to "qür")
     return trans
