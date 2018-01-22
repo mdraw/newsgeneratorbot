@@ -6,7 +6,7 @@ import os
 import torch
 from torch.autograd import Variable
 
-from network.helpers import char_tensor, all_characters, ascii2german
+from network.helpers import char_tensor, all_characters, transliterate
 
 
 def generate(
@@ -42,7 +42,7 @@ def generate(
             inp = inp.cuda()
 
     if german:
-        predicted = ascii2german(predicted)
+        predicted = transliterate(predicted, mode='ascii2german')
     return predicted
 
 

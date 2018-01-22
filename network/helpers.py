@@ -28,18 +28,24 @@ def random_letter(only_capital=True):
     return random.choice(letters)
 
 
-def ascii2german(text):
-    """Convert digraphs in the text to German umlauts."""
-    trans = text\
-        .replace('ae', 'ä')\
-        .replace('oe', 'ö')\
-        .replace('ue', 'ü')\
-        .replace('Ae', 'Ä')\
-        .replace('Oe', 'Ö')\
-        .replace('Ue', 'Ü')\
-        .replace('Qü', 'Qu')\
-        .replace('qü', 'qu')\
-        # .replace('ss', 'ß')  # We can't decide if this was an actual ß
-    # (The "qü" replacement is necessary because e.g. "quer" would otherwise
-    # be transliterated to "qür")
+# TODO: Make sure all the "_"s without a, o etc. are disappear after enough training
+german2ascii_dict = {
+    'ä': '_a',
+    'ö': '_o',
+    'ü': '_u',
+    'Ä': '_A',
+    'Ö': '_O',
+    'Ü': '_U',
+    'ß': '_ß',
+}
+
+
+def transliterate(text, mode='ascii2german', dictionary=german2ascii_dict):
+    """Transliterate German -> ascii with custom digraphs or vice versa."""
+    trans = text
+    for ger, asc in dictionary.items():
+        if mode == 'german2ascii':
+            trans = trans.replace(ger, asc)
+        elif mode == 'ascii2german':
+            trans = trans.replace(asc, ger)
     return trans
