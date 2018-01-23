@@ -172,47 +172,40 @@ all_losses = []
 loss_avg = 0
 min_loss = math.inf
 
-try:
-    print("Training for %d steps..." % args.n_steps)
-    # try:
-    for i, batch in enumerate(tqdm(train_loader)):
-        inp, target = batch
-        inp, target = Variable(inp), Variable(target)
-        if args.cuda:
-            inp, target = inp.cuda(), target.cuda()
-        loss = train(inp, target)
-        loss_avg += loss
-        all_losses.append(loss)
+print("Training for %d steps..." % args.n_steps)
+# try:
+for i, batch in enumerate(tqdm(train_loader)):
+    inp, target = batch
+    inp, target = Variable(inp), Variable(target)
+    if args.cuda:
+        inp, target = inp.cuda(), target.cuda()
+    loss = train(inp, target)
+    loss_avg += loss
+    all_losses.append(loss)
 
-        if i % args.preview_every == 0 and i > 0:
-            curr_loss = loss_avg / args.preview_every
-            print(f'\n\nLoss: {curr_loss:.4f}. Best loss was {min_loss:.4f}.')
-            if curr_loss < min_loss:
-                min_loss = curr_loss
-                print('Best loss so far. Saving model...')
-                save()
-            loss_avg = 0
-            preview_text = generate(
-                model=model,
-                prime_str=args.preview_primer,
-                predict_len=args.preview_length,
-                german=args.preview_german,
-                cuda=args.cuda
-            )
-            print('\n"""\n', preview_text, '\n"""\n')
+    if i % args.preview_every == 0 and i > 0:
+        curr_loss = loss_avg / args.preview_every
+        print(f'\n\nLoss: {curr_loss:.4f}. Best loss was {min_loss:.4f}.')
+        if curr_loss < min_loss:
+            min_loss = curr_loss
+            print('Best loss so far. Saving model...')
+            save()
+        loss_avg = 0
+        preview_text = generate(
+            model=model,
+            prime_str=args.preview_primer,
+            predict_len=args.preview_length,
+            german=args.preview_german,
+            cuda=args.cuda
+        )
+        print('\n"""\n', preview_text, '\n"""\n')
 
-            plt.plot(all_losses)
-            plt.savefig('loss.png')
-    # except:
-    #     import traceback
-    #     traceback.print_exc()
-    #     cont = False
-    #     import IPython; IPython.embed()
-    #     if not cont:
-    #         raise SystemExit
-
-    print("Saving...")
-    save()
-except KeyboardInterrupt:
-    print("Saving before quit...")
-    save()
+        plt.plot(all_losses)
+        plt.savefig('loss.png')
+# except:
+#     import traceback
+#     traceback.print_exc()
+#     cont = False
+#     import IPython; IPython.embed()
+#     if not cont:
+#         raise SystemExit
