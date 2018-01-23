@@ -13,5 +13,5 @@ dependencies:
   - pytorch=0.3.*
   - tqdm=4.*
   - unidecode=0.04.*
+  - tensorboardx=1.0
   - python-telegram-bot=9.0.*
-

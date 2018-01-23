@@ -2,20 +2,19 @@
 
 
 import argparse
+import datetime
 import math
 import os
 import random
 import time
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 from unidecode import unidecode
+from tensorboardX import SummaryWriter
 
 from network.generate import generate
 from network.helpers import char_tensor, n_all_characters
@@ -42,6 +41,10 @@ args = parser.parse_args()
 
 if args.cuda:
     print("Using CUDA")
+
+
+model_name = os.path.splitext(os.path.basename(args.textfile))[0]
+timestamp = datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S')
 
 
 # TODO: Maybe support lazy loading for large corpora
@@ -139,7 +142,7 @@ def train(inp, target):
 
 
 def save():
-    save_filename = os.path.splitext(os.path.basename(args.textfile))[0] + '.pt'
+    save_filename = model_name + '.pt'
     torch.save(model, save_filename)
     print('Saved as %s' % save_filename)
 
@@ -154,7 +157,7 @@ model = CharRNN(
 
 optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer, verbose=True, factor=0.1, patience=4
+    optimizer, verbose=True, factor=0.2, patience=2
 )
 criterion = nn.CrossEntropyLoss()
 
@@ -168,6 +171,11 @@ train_loader = DataLoader(
     shuffle=False,  # shuffling is done by the DataSet itself currently
     num_workers=args.num_workers
 )
+
+tb_name = model_name + '__' + timestamp
+tb_path = os.path.expanduser(f'~/ngtraining/{tb_name}')
+os.makedirs(tb_path)
+writer = SummaryWriter(tb_path)
 
 start = time.time()
 all_losses = []
@@ -192,6 +200,7 @@ for i, batch in enumerate(tqdm(train_loader)):
             print('Best loss so far. Saving model...')
             save()
         scheduler.step(curr_loss)
+        # writer.add_scalar('lr', scheduler)  # TODO: Log learning rate
         loss_avg = 0
         preview_text = generate(
             model=model,
@@ -201,6 +210,8 @@ for i, batch in enumerate(tqdm(train_loader)):
             cuda=args.cuda
         )
         print('\n"""\n', preview_text, '\n"""\n')
+        writer.add_scalar('tr_loss', curr_loss, global_step=i)
+        writer.add_text('Text', preview_text, i)
 
         all_losses.append(curr_loss)
         # plt.plot(all_losses)
