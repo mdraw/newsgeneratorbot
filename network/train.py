@@ -2,6 +2,7 @@
 
 
 import argparse
+import math
 import os
 import random
 import time
@@ -121,40 +122,42 @@ class TextLineDataset(Dataset):
 
 
 def train(inp, target):
-    hidden = decoder.init_hidden(args.batch_size)
+    hidden = model.init_hidden(args.batch_size)
     if args.cuda:
         hidden = hidden.cuda()
-    decoder.zero_grad()
+    model.zero_grad()
     loss = 0
 
     for c in range(args.chunk_len):
-        output, hidden = decoder(inp[:, c], hidden)
+        output, hidden = model(inp[:, c], hidden)
         loss += criterion(output.view(args.batch_size, -1), target[:, c])
 
     loss.backward()
-    decoder_optimizer.step()
+    optimizer.step()
 
     return loss.data[0] / args.chunk_len
 
 
 def save():
     save_filename = os.path.splitext(os.path.basename(args.textfile))[0] + '.pt'
-    torch.save(decoder, save_filename)
+    torch.save(model, save_filename)
     print('Saved as %s' % save_filename)
 
 
 # Initialize model and start training
-decoder = CharRNN(
-    n_all_characters,
-    args.hidden_size,
-    n_all_characters,
+model = CharRNN(
+    input_size=n_all_characters,
+    hidden_size=args.hidden_size,
+    output_size=n_all_characters,
     n_layers=args.n_layers,
 )
-decoder_optimizer = torch.optim.Adam(decoder.parameters(), lr=args.learning_rate)
+
+# TODO: Learning rate schedule
+optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 criterion = nn.CrossEntropyLoss()
 
 if args.cuda:
-    decoder.cuda()
+    model.cuda()
 
 train_data = TextChunkDataset(args.textfile, args.chunk_len, args.n_steps)
 train_loader = DataLoader(
@@ -167,6 +170,7 @@ train_loader = DataLoader(
 start = time.time()
 all_losses = []
 loss_avg = 0
+min_loss = math.inf
 
 try:
     print("Training for %d steps..." % args.n_steps)
@@ -181,10 +185,15 @@ try:
         all_losses.append(loss)
 
         if i % args.preview_every == 0 and i > 0:
-            print(f'\n\nloss = {loss_avg/args.preview_every:.4f}')
+            curr_loss = loss_avg / args.preview_every
+            print(f'\n\nLoss: {curr_loss:.4f}. Best loss was {min_loss:.4f}.')
+            if curr_loss < min_loss:
+                min_loss = curr_loss
+                print('Best loss so far. Saving model...')
+                save()
             loss_avg = 0
             preview_text = generate(
-                decoder,
+                model=model,
                 prime_str=args.preview_primer,
                 predict_len=args.preview_length,
                 german=args.preview_german,

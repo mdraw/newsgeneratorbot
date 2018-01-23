@@ -10,7 +10,7 @@ from network.helpers import char_tensor, all_characters, transliterate
 
 
 def generate(
-        decoder, prime_str='A', predict_len=100, temperature=0.8,
+        model, prime_str='A', predict_len=100, temperature=0.8,
         german=False, until_first=None, until_last=None, min_predict_len=None, cuda=False
 ):
     if until_first is not None and until_last is not None:
@@ -19,7 +19,7 @@ def generate(
             'Please decide for one of them and keep the other `None`.'
         )
 
-    hidden = decoder.init_hidden(1)
+    hidden = model.init_hidden(1)
     prime_input = Variable(char_tensor(prime_str).unsqueeze(0))
 
     if cuda:
@@ -29,12 +29,12 @@ def generate(
 
     # Use priming string to "build up" hidden state
     for p in range(len(prime_str) - 1):
-        _, hidden = decoder(prime_input[:, p], hidden)
+        _, hidden = model(prime_input[:, p], hidden)
 
     inp = prime_input[:, -1]
 
     for p in range(predict_len):
-        output, hidden = decoder(inp, hidden)
+        output, hidden = model(inp, hidden)
 
         # Sample from the network as a multinomial distribution
         output_dist = output.data.view(-1).div(temperature).exp()
@@ -79,14 +79,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     try:
-        decoder = torch.load(os.path.expanduser(args.modelfile))
+        model = torch.load(os.path.expanduser(args.modelfile))
     except AssertionError:  # Loading cuda model without --cuda
-        decoder = torch.load(
+        model = torch.load(
             os.path.expanduser(args.modelfile),
             map_location=lambda storage, loc: storage
         )
     generated_text = generate(
-        decoder=decoder,
+        model=model,
         prime_str=args.prime_str,
         predict_len=args.predict_len,
         temperature=args.temperature,
