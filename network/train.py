@@ -29,7 +29,7 @@ parser.add_argument('--preview-every', type=int, default=100)
 parser.add_argument('--preview-primer', default='A')
 parser.add_argument('--preview-length', type=int, default=200)
 parser.add_argument('--preview-german', action='store_true',
-        help='Convert digraphs in the generated preview text to German umlauts.'
+    help='Convert digraphs in the generated preview text to German umlauts.'
 )
 parser.add_argument('--hidden-size', type=int, default=100)
 parser.add_argument('--n-layers', type=int, default=2)
@@ -152,8 +152,10 @@ model = CharRNN(
     n_layers=args.n_layers,
 )
 
-# TODO: Learning rate schedule
 optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer, verbose=True, patience=4
+)
 criterion = nn.CrossEntropyLoss()
 
 if args.cuda:
@@ -190,6 +192,7 @@ for i, batch in enumerate(tqdm(train_loader)):
             min_loss = curr_loss
             print('Best loss so far. Saving model...')
             save()
+        scheduler.step(curr_loss)
         loss_avg = 0
         preview_text = generate(
             model=model,
