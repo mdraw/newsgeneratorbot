@@ -37,7 +37,7 @@ parser.add_argument('--learning-rate', type=float, default=0.01)
 parser.add_argument('--chunk-len', type=int, default=200)
 parser.add_argument('--batch-size', type=int, default=100)
 parser.add_argument('--cuda', action='store_true')
-parser.add_argument('--num-workers', type=int, default=0)
+parser.add_argument('--num-workers', type=int, default=1)
 args = parser.parse_args()
 
 if args.cuda:
@@ -47,11 +47,11 @@ if args.cuda:
 # TODO: Maybe support lazy loading for large corpora
 # TODO: Try to use one line each as training samples, don't cut fixed-size chunks.
 class TextChunkDataset(Dataset):
-    def __init__(self, filename, chunk_len, n_samples, batch_size=args.batch_size):
+    def __init__(self, filename, chunk_len, n_steps, batch_size=args.batch_size):
         with open(filename) as f:
             self.text = f.read()
         self.n_chars = len(self.text)
-        self.n_samples = n_samples
+        self.n_steps = n_steps
         self.chunk_len = chunk_len
         self.batch_size = batch_size  # This is just used for progress tracking
 
@@ -71,7 +71,7 @@ class TextChunkDataset(Dataset):
         # return self.n_chars // self.chunk_len
         # Currently abusing __len__ to be variable. I am not sure why we
         # should let this represent an actual epoch size.
-        return self.n_samples * self.batch_size
+        return self.n_steps * self.batch_size
 
 
 # Not working.
