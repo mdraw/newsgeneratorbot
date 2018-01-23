@@ -102,9 +102,9 @@ def write(bot, update, args):
     if not cli_args.disable_titles:
         generated_content = generated_content[len(prime_str):]
 
-    full_text = f'*{generated_title}*\n\n{generated_content}'
+    full_text = f'<b>{generated_title}</b>\n\n{generated_content}'
     logger.info(f'Replying with:\n"""\n{full_text}\n"""\n')
-    update.message.reply_text(full_text, parse_mode=ParseMode.MARKDOWN)
+    update.message.reply_text(full_text, parse_mode=ParseMode.HTML)
 
 
 def error(bot, update, error):
