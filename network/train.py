@@ -25,7 +25,7 @@ from network.model import CharRNN
 parser = argparse.ArgumentParser()
 parser.add_argument('textfile', type=str)
 parser.add_argument('--n-steps', type=int, default=20000)
-parser.add_argument('--preview-every', type=int, default=100)
+parser.add_argument('--checkpoint-every', type=int, default=100)
 parser.add_argument('--preview-primer', default='A')
 parser.add_argument('--preview-length', type=int, default=200)
 parser.add_argument('--preview-german', action='store_true',
@@ -154,7 +154,7 @@ model = CharRNN(
 
 optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer, verbose=True, patience=4
+    optimizer, verbose=True, factor=0.1, patience=4
 )
 criterion = nn.CrossEntropyLoss()
 
@@ -183,10 +183,9 @@ for i, batch in enumerate(tqdm(train_loader)):
         inp, target = inp.cuda(), target.cuda()
     loss = train(inp, target)
     loss_avg += loss
-    all_losses.append(loss)
 
-    if i % args.preview_every == 0 and i > 0:
-        curr_loss = loss_avg / args.preview_every
+    if i % args.checkpoint_every == 0 and i > 0:
+        curr_loss = loss_avg / args.checkpoint_every
         print(f'\n\nLoss: {curr_loss:.4f}. Best loss was {min_loss:.4f}.')
         if curr_loss < min_loss:
             min_loss = curr_loss
@@ -203,8 +202,9 @@ for i, batch in enumerate(tqdm(train_loader)):
         )
         print('\n"""\n', preview_text, '\n"""\n')
 
-        plt.plot(all_losses)
-        plt.savefig('loss.png')
+        all_losses.append(curr_loss)
+        # plt.plot(all_losses)
+        # plt.savefig('loss.png')
 # except:
 #     import traceback
 #     traceback.print_exc()
