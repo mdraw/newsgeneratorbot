@@ -17,7 +17,7 @@ from unidecode import unidecode
 from tensorboardX import SummaryWriter
 
 from network.generate import generate
-from network.helpers import char_tensor, n_all_characters
+from network.helpers import char_tensor, random_letter, n_all_characters
 from network.model import CharRNN
 
 
@@ -147,7 +147,6 @@ def save():
     print('Saved as %s' % save_filename)
 
 
-# Initialize model and start training
 model = CharRNN(
     input_size=n_all_characters,
     hidden_size=args.hidden_size,
@@ -172,6 +171,7 @@ train_loader = DataLoader(
     num_workers=args.num_workers
 )
 
+# TensorboardX setup
 tb_name = model_name + '__' + timestamp
 tb_path = os.path.expanduser(f'~/ngtraining/{tb_name}')
 os.makedirs(tb_path)
@@ -192,30 +192,30 @@ for i, batch in enumerate(tqdm(train_loader)):
     loss = train(inp, target)
     loss_avg += loss
 
+    writer.add_scalar('tr_loss', loss, i)
+
     if i % args.checkpoint_every == 0 and i > 0:
         curr_loss = loss_avg / args.checkpoint_every
+        curr_lr = optimizer.param_groups[0]['lr']  # Assumes no groups
         print(f'\n\nLoss: {curr_loss:.4f}. Best loss was {min_loss:.4f}.')
         if curr_loss < min_loss:
             min_loss = curr_loss
             print('Best loss so far. Saving model...')
             save()
-        scheduler.step(curr_loss)
-        # writer.add_scalar('lr', scheduler)  # TODO: Log learning rate
+        scheduler.step(curr_loss)  # TODO: Use validation loss instead
+        writer.add_scalar('lr', curr_lr, i)
         loss_avg = 0
         preview_text = generate(
             model=model,
-            prime_str=args.preview_primer,
+            prime_str=random_letter(),
             predict_len=args.preview_length,
             german=args.preview_german,
             cuda=args.cuda
         )
-        print('\n"""\n', preview_text, '\n"""\n')
-        writer.add_scalar('tr_loss', curr_loss, global_step=i)
+        print(f'\n"""\n{preview_text}\n"""\n')
         writer.add_text('Text', preview_text, i)
-
+        writer.file_writer.flush()
         all_losses.append(curr_loss)
-        # plt.plot(all_losses)
-        # plt.savefig('loss.png')
 # except:
 #     import traceback
 #     traceback.print_exc()

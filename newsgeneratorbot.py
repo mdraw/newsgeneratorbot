@@ -33,11 +33,16 @@ parser.add_argument('-p', '--default-prime-str', type=str, default='A')
 parser.add_argument('-l', '--predict-len', type=int, default=500)
 parser.add_argument('-t', '--temperature', type=float, default=0.8)
 parser.add_argument('-w', '--disable-titles', action='store_true')
+parser.add_argument(
+    '-g', '--disable-german', action='store_true',
+    help='Convert digraphs in the generated text to German umlauts.'
+)
 parser.add_argument('--cuda', action='store_true')
 parser.add_argument(
     '--token-file', type=str, default='~/.newsgeneratorbot/token'
 )
 cli_args = parser.parse_args()
+cli_args.german = not cli_args.disable_german
 
 # Read Telegram Bot API token from file (reading the first line)
 token_file = os.path.expanduser(cli_args.token_file)
@@ -77,6 +82,7 @@ def write(bot, update, args):
             model=title_rnn,
             prime_str=prime_str,
             temperature=cli_args.temperature,
+            german=cli_args.german,
             cuda=cli_args.cuda,
             until_first='\n'
         )
@@ -93,6 +99,7 @@ def write(bot, update, args):
         prime_str=prime_str,
         predict_len=cli_args.predict_len,
         temperature=cli_args.temperature,
+        german=cli_args.german,
         cuda=cli_args.cuda,
         until_last='.'
     )
@@ -103,6 +110,7 @@ def write(bot, update, args):
         generated_content = generated_content[len(prime_str):]
 
     full_text = f'<b>{generated_title}</b>\n\n{generated_content}'
+    # TODO: Sanitize/escape full_text. Some text sequences lead to HTML parser errors.
     logger.info(f'Replying with:\n"""\n{full_text}\n"""\n')
     update.message.reply_text(full_text, parse_mode=ParseMode.HTML)
 
