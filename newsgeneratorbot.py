@@ -3,6 +3,7 @@
 import argparse
 import logging
 import os
+import traceback
 
 import torch
 from telegram.parsemode import ParseMode
@@ -70,13 +71,15 @@ def hello(bot, update):
     )
 
 
-def write(bot, update, args):
-    logger.info(f'New write request by {update.message.from_user.first_name}.')
-    if args:
-        prime_str = ' '.join(args)
-        logger.info(f'Received writing prompt "{prime_str}".')
-    else:
-        prime_str = random_letter()
+def sanitize_html(text):
+    """Prevent parsing errors by converting <, >, & to their HTML codes."""
+    return text\
+        .replace('<', '&lt;')\
+        .replace('>', '&gt;')\
+        .replace('&', '&amp;')
+
+
+def generate_reply(prime_str):
     if not cli_args.disable_titles:
         generated_title = generate(
             model=title_rnn,
@@ -93,7 +96,7 @@ def write(bot, update, args):
         # the last characters of the generated title have overproportionate
         # influence on the first characters of the generated content.
         # Is there a way to evenly distribute the title characters' influence?
-        prime_str = generated_title
+        prime_str = sanitize_html(generated_title)
     generated_content = generate(
         model=content_rnn,
         prime_str=prime_str,
@@ -108,11 +111,35 @@ def write(bot, update, args):
     # so it isn't duplicated.
     if not cli_args.disable_titles:
         generated_content = generated_content[len(prime_str):]
-
-    full_text = f'<b>{generated_title}</b>\n\n{generated_content}'
+    generated_content = sanitize_html(generated_content)
+    if cli_args.disable_titles:
+        full_text = generated_content
+    else:
+        full_text = f'<b>{generated_title}</b>\n\n{generated_content}'
     # TODO: Sanitize/escape full_text. Some text sequences lead to HTML parser errors.
-    logger.info(f'Replying with:\n"""\n{full_text}\n"""\n')
-    update.message.reply_text(full_text, parse_mode=ParseMode.HTML)
+    return full_text
+
+
+
+def write(bot, update, args):
+    logger.info(f'New write request by {update.message.from_user.first_name}.')
+    if args:
+        prime_str = ' '.join(args)
+        logger.info(f'Received writing prompt "{prime_str}".')
+    else:
+        prime_str = random_letter()
+
+    try:
+        full_text = generate_reply(prime_str)
+        logger.info(f'Replying with:\n"""\n{full_text}\n"""\n')
+        update.message.reply_text(full_text, parse_mode=ParseMode.HTML)
+    except:
+        traceback.print_exc()
+        update.message.reply_text(
+            'Sorry, I couldn\'t generate a text. Please retry with a different '
+            'writing prompt.'
+        )
+
 
 
 def error(bot, update, error):
