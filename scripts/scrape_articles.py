@@ -2,6 +2,7 @@
 
 import argparse
 import pickle
+import traceback
 
 import newspaper
 from tqdm import tqdm
@@ -22,31 +23,38 @@ parser.add_argument(
     help='If true, store a dict mapping titles to texts in a .pkl file.'
 )
 args = parser.parse_args()
-
 url = args.url
 maxarticles = args.n
 
+# Parse site
 print('Building site index... (this can take a minute.)')
 site = newspaper.build(url, memoize_articles=False)
-
 assert site.articles
-print(f'Found {len(site.articles)} articles. on {url} ({site.brand})')
+print(f'Found {len(site.articles)} articles on {url} ({site.brand})')
 
 articles = {}
-
 failed_count = 0
 empty_count = 0
+# Download and parse articles, store in dict (title: content)
 for ar in tqdm(site.articles[:maxarticles]):
     try:
         ar.download()
         ar.parse()
-        if ar.text:
-            articles[ar.title] = ar.text
+        content = ar.text
+        if content:
+            # Shorten long newline runs
+            while '\n\n\n' in content:
+                content = content.replace('\n\n\n', '\n')
+            articles[ar.title] = content
         else:
             empty_count += 1
+    except KeyboardInterrupt as e:
+        raise e
     except:
         failed_count += 1
+        traceback.print_exc()
 
+# Print statistics
 if failed_count > 0:
     print(f'{failed_count} articles could not be loaded.')
 if empty_count > 0:
@@ -54,6 +62,7 @@ if empty_count > 0:
 print(f'Successfully retrieved {len(articles)} articles.')
 
 
+# Store raw articles dict in .pkl
 if args.pickle:
     pklfilename = site.brand + '.pkl'
     print('Storing "articles" dict in  {pklfilename}')
@@ -61,12 +70,13 @@ if args.pickle:
         pickle.dump(articles, f)
 
 
+# Write article contents and titles to separate files
 titlefilename = site.brand + '_titles' + '.txt'
-textfilename = site.brand + '_texts' '.txt'
+contfilename = site.brand + '_content' '.txt'
 titlefile = open(titlefilename, 'w')
-textfile = open(textfilename, 'w')
-for title, text in articles.items():
+contfile = open(contfilename, 'w')
+for title, cont in articles.items():
     titlefile.write(title + '\n')
-    textfile.write(text + '\n')
+    contfile.write(cont + '\n')
 titlefile.close()
-textfile.close()
+contfile.close()
