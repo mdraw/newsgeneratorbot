@@ -19,7 +19,7 @@ parser.add_argument(
 parser.add_argument(
     '--pickle',
     action='store_true',
-    help='If true, store a dict mapping titles to texts) in a .pkl file.'
+    help='If true, store a dict mapping titles to texts in a .pkl file.'
 )
 args = parser.parse_args()
 
@@ -35,16 +35,22 @@ print(f'Found {len(site.articles)} articles. on {url} ({site.brand})')
 articles = {}
 
 failed_count = 0
+empty_count = 0
 for ar in tqdm(site.articles[:maxarticles]):
     try:
         ar.download()
         ar.parse()
-        articles[ar.title] = ar.text
+        if ar.text:
+            articles[ar.title] = ar.text
+        else:
+            empty_count += 1
     except:
         failed_count += 1
 
 if failed_count > 0:
     print(f'{failed_count} articles could not be loaded.')
+if empty_count > 0:
+    print(f'{empty_count} articles were empty and were omitted.')
 print(f'Successfully retrieved {len(articles)} articles.')
 
 
