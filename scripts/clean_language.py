@@ -42,6 +42,7 @@ def main():
         for fl in foreign_lines:
             print(fl)
         print()
+        print(f'{len(foreign_lines)} lines were removed.')
         print(f'Stored cleaned version in {outpath}.')
 
 
