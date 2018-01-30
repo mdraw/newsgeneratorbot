@@ -28,7 +28,7 @@ def random_letter(only_capital=True):
     return random.choice(letters)
 
 
-# TODO: Make sure all the "_"s without a, o etc. are disappear after enough training
+# Remember to keep this in sync with ../scripts/transliterate.py
 german2ascii_dict = {
     'ä': '_a',
     'ö': '_o',

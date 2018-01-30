@@ -1,15 +1,38 @@
+#!/usr/bin/env python3
+
 import argparse
 import os
 
 from unidecode import unidecode
-
-from network.helpers import transliterate
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input', type=str)
 parser.add_argument('--output', type=str, default=None)
 args = parser.parse_args()
+
+
+# Remember to keep this in sync with ../network/helpers.py
+german2ascii_dict = {
+    'ä': '_a',
+    'ö': '_o',
+    'ü': '_u',
+    'Ä': '_A',
+    'Ö': '_O',
+    'Ü': '_U',
+    'ß': '_s',
+}
+
+
+def transliterate(text, mode='ascii2german', dictionary=german2ascii_dict):
+    """Transliterate German -> ascii with custom digraphs or vice versa."""
+    trans = text
+    for ger, asc in dictionary.items():
+        if mode == 'german2ascii':
+            trans = trans.replace(ger, asc)
+        elif mode == 'ascii2german':
+            trans = trans.replace(asc, ger)
+    return trans
 
 
 def main():
