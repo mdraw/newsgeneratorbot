@@ -28,6 +28,11 @@ maxarticles = args.n
 
 # Parse site
 print('Building site index... (this can take a minute.)')
+
+# newspaper requires explicit protocol, so make sure to at least prefix http
+if not (url.startswith('https://') or url.startswith('http://')):
+    url = f'http://{url}'  # https is still not supported everywhere...
+
 site = newspaper.build(url, memoize_articles=False)
 assert site.articles
 print(f'Found {len(site.articles)} articles on {url} ({site.brand})')
