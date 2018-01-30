@@ -39,13 +39,9 @@ def main():
             if line not in duplicate_lines:
                 outfile.write(line)
     if not args.quiet:
+        print(f'Removed {len(duplicate_lines)} lines from text.')
         print(f'Stored deduplicated version in {outpath}.')
 
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
