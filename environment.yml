@@ -15,3 +15,4 @@ dependencies:
   - unidecode=0.04.*
   - tensorboardx=1.0
   - python-telegram-bot=9.0.*
+  - langdetect=1.0.*
