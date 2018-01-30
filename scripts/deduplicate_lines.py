@@ -18,21 +18,19 @@ def main():
         outpath = os.path.expanduser(args.output)
 
     with open(inpath) as infile:
-
         lines = infile.readlines()
-        seen = set()
-
-        duplicate_lines = {
-            line for line in lines  # Every line in the file
-            if line != '\n'  # ... that is not a newline
-            and line in seen  # ... and has already been read
-            or seen.add(line)  # (if not, it is added to seen)
-        }
-        if not args.quiet:
-            print('Duplicate lines found:\n')
-            for d in duplicate_lines:
-                print(d)
-            print()
+    seen = set()
+    duplicate_lines = {
+        line for line in lines  # Every line in the file
+        if line != '\n'  # ... that is not a newline
+        and line in seen  # ... and has already been read
+        or seen.add(line)  # (if not, it is added to seen)
+    }
+    if not args.quiet:
+        print('Duplicate lines found:\n')
+        for d in duplicate_lines:
+            print(d)
+        print()
 
     with open(outpath, 'w') as outfile:
         for line in lines:
