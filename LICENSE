@@ -2,8 +2,16 @@ The MIT License (MIT)
 
 Copyright (c) 2018 Martin Drawitsch
 
-Based on https://github.com/spro/char-rnn.pytorch
-Copyright (c) 2017 Sean Robertson
+# Credits
+#
+# Some of the NN code is based on https://github.com/spro/char-rnn.pytorch
+# Copyright (c) 2017 Sean Robertson (MIT license),
+# which is itself based on https://github.com/karpathy/char-rnn,
+# Copyright (c) 2015 - 2016 Andrej Karpathy (MIT license)
+#
+# This project is inspired by Andrej Karpathy's article
+# http://karpathy.github.io/2015/05/21/rnn-effectiveness/
+
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
