@@ -19,7 +19,8 @@ from network.model import CharRNN
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('textfile', type=str)
+parser.add_argument('training', type=str)
+parser.add_argument('--validation', default=None)
 parser.add_argument('--n-steps', type=int, default=20000)
 parser.add_argument('--checkpoint-every', type=int, default=100)
 parser.add_argument('--preview-length', type=int, default=200)
@@ -39,15 +40,34 @@ parser.add_argument(
     help='How many batches to sample for each validation pass.',
     default=10
 )
+parser.add_argument(
+    '--patience', type=int, help='Patience of the LR scheduler', default=3
+)
 parser.add_argument('--cuda', action='store_true')
 parser.add_argument('--num-workers', type=int, default=1)
 args = parser.parse_args()
+
+
+# Try to automatically find a validation data set in the same directory
+if args.validation is None:
+    training_filename = os.path.basename(args.training)
+    if 'train' in training_filename:
+        candidate = os.path.join(
+            os.path.dirname(args.training),
+            training_filename.replace('train', 'valid')
+        )
+        if os.path.isfile(candidate):
+            args.validation = candidate
+            print(f'Found validation set {candidate}. Enabling validation.')
+if args.validation is None:
+    print('Validation set could not be found. Disabling validation.')
+
 
 if args.cuda:
     print("Using CUDA")
 
 
-model_name = os.path.splitext(os.path.basename(args.textfile))[0]
+model_name = os.path.splitext(os.path.basename(args.training))[0]
 timestamp = datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S')
 
 
@@ -182,15 +202,16 @@ model = CharRNN(
 
 optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer, verbose=True, factor=0.2, patience=2
+    optimizer, verbose=True, factor=0.2, patience=args.patience
 )
 criterion = nn.CrossEntropyLoss()
 
 if args.cuda:
     model.cuda()
+    criterion.cuda()
 
 train_data = TextChunkDataset(
-    filename=args.textfile,
+    filename=args.training,
     chunk_len=args.chunk_len,
     n_steps=args.n_steps,
     batch_size=args.batch_size
@@ -202,19 +223,20 @@ train_loader = DataLoader(
     num_workers=args.num_workers
 )
 
-# TODO: Use dedicated validation data set
-val_data = TextChunkDataset(
-    filename=args.textfile,
-    chunk_len=args.chunk_len,
-    n_steps=args.valid_count,
-    batch_size=args.batch_size
-)
-val_loader = DataLoader(
-    val_data,
-    batch_size=args.batch_size,
-    shuffle=False,  # shuffling is done by the DataSet itself currently
-    num_workers=0
-)
+if args.validation:
+    # TODO: Use dedicated validation data set
+    val_data = TextChunkDataset(
+        filename=args.validation,
+        chunk_len=args.chunk_len,
+        n_steps=args.valid_count,
+        batch_size=args.batch_size
+    )
+    val_loader = DataLoader(
+        val_data,
+        batch_size=args.batch_size,
+        shuffle=False,  # shuffling is done by the DataSet itself currently
+        num_workers=0
+    )
 
 # TensorboardX setup
 tb_name = model_name + '__' + timestamp
@@ -226,6 +248,7 @@ start = time.time()
 all_losses = []
 loss_avg = 0
 min_loss = math.inf
+min_val_loss = math.inf
 
 print("Training for %d steps..." % args.n_steps)
 # try:
@@ -242,15 +265,27 @@ for i, batch in enumerate(tqdm(train_loader)):
     if i % args.checkpoint_every == 0 and i > 0:
         curr_loss = loss_avg / args.checkpoint_every
         curr_lr = optimizer.param_groups[0]['lr']  # Assumes no groups
-        val_loss = validate()
-        writer.add_scalar('val_loss', val_loss, i)
-        print(f'\n\nLoss: {curr_loss:.4f}. Best loss was {min_loss:.4f}.')
-        print(f'Validation loss: {val_loss:.4f}\n')
-        if curr_loss < min_loss:
-            min_loss = curr_loss
-            print('Best loss so far. Saving model...')
-            save()
-        scheduler.step(curr_loss)  # TODO: Use validation loss instead
+        print(f'\n\nTraining loss: {curr_loss:.4f}. '
+              f'Best training loss was {min_loss:.4f}.')
+
+        if args.validation:  # Validation loss is available
+            val_loss = validate()
+            writer.add_scalar('val_loss', val_loss, i)
+            print(f'Validation loss: {val_loss:.4f}. '
+                  f'Best validation loss was {min_val_loss:.4f}')
+            if val_loss < min_val_loss:
+                min_val_loss = val_loss
+                print('Best validation loss so far. Saving model...')
+                save()
+            scheduler.step(val_loss)
+        else:  # Validation loss not available -> use training loss instead
+            if curr_loss < min_loss:
+                print('Best loss so far. Saving model...')
+                save()
+            scheduler.step(curr_loss)
+
+        min_loss = min(curr_loss, min_loss)
+
         writer.add_scalar('lr', curr_lr, i)
         loss_avg = 0
         preview_text = generate(
@@ -263,7 +298,6 @@ for i, batch in enumerate(tqdm(train_loader)):
         print(f'\n"""\n{preview_text}\n"""\n')
         writer.add_text('Text', preview_text, i)
         writer.file_writer.flush()
-        all_losses.append(curr_loss)
 # except:
 #     import traceback
 #     traceback.print_exc()
