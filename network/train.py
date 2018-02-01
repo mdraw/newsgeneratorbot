@@ -21,6 +21,7 @@ from network.model import CharRNN
 parser = argparse.ArgumentParser()
 parser.add_argument('training', type=str)
 parser.add_argument('--validation', default=None)
+parser.add_argument('--name', default=None)
 parser.add_argument('--n-steps', type=int, default=20000)
 parser.add_argument('--checkpoint-every', type=int, default=100)
 parser.add_argument('--preview-length', type=int, default=200)
@@ -66,8 +67,10 @@ if args.validation is None:
 if args.cuda:
     print("Using CUDA")
 
-
-model_name = os.path.splitext(os.path.basename(args.training))[0]
+if args.name is None:
+    model_name = os.path.splitext(os.path.basename(args.training))[0]
+else:
+    model_name = args.name
 timestamp = datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S')
 
 
