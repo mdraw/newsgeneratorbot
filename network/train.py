@@ -33,6 +33,7 @@ parser.add_argument(
 parser.add_argument('--hidden-size', type=int, default=800)
 parser.add_argument('--n-layers', type=int, default=1)
 parser.add_argument('--learning-rate', type=float, default=0.01)
+parser.add_argument('--weight-decay', type=float, default=1e-6)
 parser.add_argument('--chunk-len', type=int, default=200)
 parser.add_argument('--batch-size', type=int, default=100)
 parser.add_argument(
@@ -203,7 +204,11 @@ model = CharRNN(
     n_layers=args.n_layers,
 )
 
-optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+optimizer = torch.optim.Adam(
+    model.parameters(),
+    lr=args.learning_rate,
+    weight_decay=args.weight_decay
+)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
     optimizer, verbose=True, factor=0.2, patience=args.patience
 )
