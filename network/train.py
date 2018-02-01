@@ -23,7 +23,9 @@ parser.add_argument('textfile', type=str)
 parser.add_argument('--n-steps', type=int, default=20000)
 parser.add_argument('--checkpoint-every', type=int, default=100)
 parser.add_argument('--preview-length', type=int, default=200)
-parser.add_argument('--preview-german', action='store_true',
+parser.add_argument(
+    '--preview-german',
+    action='store_true',
     help='Convert digraphs in the generated preview text to German umlauts.'
 )
 parser.add_argument('--hidden-size', type=int, default=800)
@@ -31,6 +33,12 @@ parser.add_argument('--n-layers', type=int, default=1)
 parser.add_argument('--learning-rate', type=float, default=0.01)
 parser.add_argument('--chunk-len', type=int, default=200)
 parser.add_argument('--batch-size', type=int, default=100)
+parser.add_argument(
+    '--valid-count',
+    type=int,
+    help='How many batches to sample for each validation pass.',
+    default=10
+)
 parser.add_argument('--cuda', action='store_true')
 parser.add_argument('--num-workers', type=int, default=1)
 args = parser.parse_args()
@@ -46,7 +54,7 @@ timestamp = datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S')
 # TODO: Maybe support lazy loading for large corpora
 # TODO: Try to use one line each as training samples, don't cut fixed-size chunks.
 class TextChunkDataset(Dataset):
-    def __init__(self, filename, chunk_len, n_steps, batch_size=args.batch_size):
+    def __init__(self, filename, chunk_len, n_steps, batch_size):
         with open(filename) as f:
             self.text = f.read()
         self.n_chars = len(self.text)
@@ -121,7 +129,8 @@ class TextLineDataset(Dataset):
 
 
 def train(inp, target):
-    hidden = model.init_hidden(args.batch_size)
+    model.train()
+    hidden = model.init_hidden(inp.shape[0])
     if args.cuda:
         hidden = hidden.cuda()
     model.zero_grad()
@@ -129,12 +138,33 @@ def train(inp, target):
 
     for c in range(args.chunk_len):
         output, hidden = model(inp[:, c], hidden)
-        loss += criterion(output.view(args.batch_size, -1), target[:, c])
+        loss += criterion(output.view(output.shape[0], -1), target[:, c])
 
     loss.backward()
     optimizer.step()
 
     return loss.data[0] / args.chunk_len
+
+
+# TODO: Proper arguments
+# TODO: Report other metrics like perplexity
+def validate():
+    model.eval()
+    val_loss = 0
+    for inp, target in val_loader:
+        hidden = model.init_hidden(inp.shape[0])
+        inp = Variable(inp, volatile=True)
+        target = Variable(target, volatile=True)
+        if args.cuda:
+            inp = inp.cuda()
+            target = target.cuda()
+            hidden = hidden.cuda()
+        for c in range(args.chunk_len):
+            output, hidden = model(inp[:, c], hidden)
+            val_loss += criterion(output.view(output.shape[0], -1), target[:, c])
+    val_loss /= args.chunk_len
+    val_loss /= len(val_loader)
+    return val_loss.data[0]
 
 
 def save():
@@ -159,12 +189,31 @@ criterion = nn.CrossEntropyLoss()
 if args.cuda:
     model.cuda()
 
-train_data = TextChunkDataset(args.textfile, args.chunk_len, args.n_steps)
+train_data = TextChunkDataset(
+    filename=args.textfile,
+    chunk_len=args.chunk_len,
+    n_steps=args.n_steps,
+    batch_size=args.batch_size
+)
 train_loader = DataLoader(
     train_data,
     batch_size=args.batch_size,
     shuffle=False,  # shuffling is done by the DataSet itself currently
     num_workers=args.num_workers
+)
+
+# TODO: Use dedicated validation data set
+val_data = TextChunkDataset(
+    filename=args.textfile,
+    chunk_len=args.chunk_len,
+    n_steps=args.valid_count,
+    batch_size=args.batch_size
+)
+val_loader = DataLoader(
+    val_data,
+    batch_size=args.batch_size,
+    shuffle=False,  # shuffling is done by the DataSet itself currently
+    num_workers=0
 )
 
 # TensorboardX setup
@@ -193,7 +242,10 @@ for i, batch in enumerate(tqdm(train_loader)):
     if i % args.checkpoint_every == 0 and i > 0:
         curr_loss = loss_avg / args.checkpoint_every
         curr_lr = optimizer.param_groups[0]['lr']  # Assumes no groups
+        val_loss = validate()
+        writer.add_scalar('val_loss', val_loss, i)
         print(f'\n\nLoss: {curr_loss:.4f}. Best loss was {min_loss:.4f}.')
+        print(f'Validation loss: {val_loss:.4f}\n')
         if curr_loss < min_loss:
             min_loss = curr_loss
             print('Best loss so far. Saving model...')
