@@ -32,6 +32,7 @@ parser.add_argument(
 )
 parser.add_argument('--hidden-size', type=int, default=800)
 parser.add_argument('--n-layers', type=int, default=1)
+parser.add_argument('--dropout', type=float, default=0.0)
 parser.add_argument('--learning-rate', type=float, default=0.01)
 parser.add_argument('--weight-decay', type=float, default=1e-6)
 parser.add_argument('--chunk-len', type=int, default=200)
@@ -171,7 +172,6 @@ def train(inp, target):
 
 
 # TODO: Proper arguments
-# TODO: Report other metrics like perplexity
 def validate():
     model.eval()
     val_loss = 0
@@ -202,6 +202,7 @@ model = CharRNN(
     hidden_size=args.hidden_size,
     output_size=n_all_characters,
     n_layers=args.n_layers,
+    dropout=args.dropout
 )
 
 optimizer = torch.optim.Adam(
@@ -268,7 +269,9 @@ for i, batch in enumerate(tqdm(train_loader)):
     loss = train(inp, target)
     loss_avg += loss
 
+    perplexity = math.exp(loss)
     writer.add_scalar('tr_loss', loss, i)
+    writer.add_scalar('tr_perplexity', perplexity, i)
 
     if i % args.checkpoint_every == 0 and i > 0:
         curr_loss = loss_avg / args.checkpoint_every
@@ -278,7 +281,9 @@ for i, batch in enumerate(tqdm(train_loader)):
 
         if args.validation:  # Validation loss is available
             val_loss = validate()
+            val_perplexity = math.exp(val_loss)
             writer.add_scalar('val_loss', val_loss, i)
+            writer.add_scalar('val_perplexity', val_perplexity, i)
             print(f'Validation loss: {val_loss:.4f}. '
                   f'Best validation loss was {min_val_loss:.4f}')
             if val_loss < min_val_loss:
@@ -294,7 +299,7 @@ for i, batch in enumerate(tqdm(train_loader)):
 
         min_loss = min(curr_loss, min_loss)
 
-        writer.add_scalar('lr', curr_lr, i)
+        writer.add_scalar('lr', curr_lr, i)  # lr after applying schedule
         loss_avg = 0
         preview_text = generate(
             model=model,
