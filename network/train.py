@@ -30,10 +30,10 @@ parser.add_argument(
     action='store_true',
     help='Convert digraphs in the generated preview text to German umlauts.'
 )
-parser.add_argument('--hidden-size', type=int, default=800)
-parser.add_argument('--n-layers', type=int, default=1)
+parser.add_argument('--hidden-size', type=int, default=600)
+parser.add_argument('--n-layers', type=int, default=2)
 parser.add_argument('--dropout', type=float, default=0.0)
-parser.add_argument('--learning-rate', type=float, default=0.01)
+parser.add_argument('--learning-rate', type=float, default=5e-3)
 parser.add_argument('--weight-decay', type=float, default=1e-6)
 parser.add_argument('--chunk-len', type=int, default=200)
 parser.add_argument('--batch-size', type=int, default=100)
@@ -44,7 +44,7 @@ parser.add_argument(
     default=10
 )
 parser.add_argument(
-    '--patience', type=int, help='Patience of the LR scheduler', default=3
+    '--patience', type=int, help='Patience of the LR scheduler', default=5
 )
 parser.add_argument('--cuda', action='store_true')
 parser.add_argument('--num-workers', type=int, default=1)
@@ -211,7 +211,12 @@ optimizer = torch.optim.Adam(
     weight_decay=args.weight_decay
 )
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer, verbose=True, factor=0.2, patience=args.patience
+    optimizer,
+    verbose=True,
+    factor=0.2,
+    patience=args.patience,
+    cooldown=3,
+    min_lr=1e-7
 )
 criterion = nn.CrossEntropyLoss()
 
