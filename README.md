@@ -53,6 +53,10 @@ You will then be able to train a new model with
 If there is a file in the same directory with the same name, but with "valid" instead of "train", this file will be automatically used as validation data.
 (For obtaining data sets, you can follow the section "Building a data set for training and validation" below or use your own text files. Just make sure they are at least a few hundred kilobytes big for good results.)
 
+You can monitor the training progress both on the CLI and in [TensorBoard](https://github.com/tensorflow/tensorboard). Loss and perplexity performance on training and validation sets are logged every 100 training steps by default, together with previews of generated text. You can monitor training progress and compare different configurations at https://localhost:6006 after starting a local TensorBoard server with
+
+    tensorboard --logdir ~/ngtraining
+
 The model with the best performing trained parameter state will be saved to a `.pt` file in the CWD, with a file name based on your text data set file.
 
 You can manually generate text from a trained model file by running
