@@ -23,7 +23,7 @@ The `scripts` subdirectory contains Python scripts that automate data set creati
 - `deduplicate_lines.py`: Removes duplicate lines in data sets. Those occur often in scraped content (ad blocker warnings etc.) and will introduce a heavy bias towards them in the language model if they are not cleaned.
 - `split.py`: Splits a data set into training and validation data, with a specified line count ratio between them.
 
-For more usage information see the section "Building a data set for training and validation" below.
+For more usage information see the section [Building a data set for training and validation](#building-a-data-set-for-training-and-validation) below.
 
 
 ### Bot (`newsgeneratorbot.py`)
@@ -51,7 +51,7 @@ You will then be able to train a new model with
     python3 -m network.train <path/to/file-train.txt>
 
 If there is a file in the same directory with the same name, but with "valid" instead of "train", this file will be automatically used as validation data.
-(For obtaining data sets, you can follow the section "Building a data set for training and validation" below or use your own text files. Just make sure they are at least a few hundred kilobytes big for good results.)
+(For obtaining data sets, you can follow the section [Building a data set for training and validation](#building-a-data-set-for-training-and-validation) below or use your own text files. Just make sure they are at least a few hundred kilobytes big for good results.)
 
 You can monitor the training progress both on the CLI and in [TensorBoard](https://github.com/tensorflow/tensorboard). Loss and perplexity performance on training and validation sets are logged every 100 training steps by default, together with previews of generated text. You can monitor training progress and compare different configurations at https://localhost:6006 after starting a local TensorBoard server with
 
