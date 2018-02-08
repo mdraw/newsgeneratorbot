@@ -76,8 +76,6 @@ else:
 timestamp = datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S')
 
 
-# TODO: Maybe support lazy loading for large corpora
-# TODO: Try to use one line each as training samples, don't cut fixed-size chunks.
 class TextChunkDataset(Dataset):
     def __init__(self, filename, chunk_len, n_steps, batch_size):
         with open(filename) as f:
@@ -89,7 +87,6 @@ class TextChunkDataset(Dataset):
 
     def __getitem__(self, index):
         # index is currently currently ignored.
-        # TODO: Respect index and defer randomization to DataLoader
         start_index = random.randint(0, self.n_chars - self.chunk_len - 1)
         end_index = start_index + self.chunk_len + 1
         chunk = self.text[start_index:end_index]
@@ -104,53 +101,6 @@ class TextChunkDataset(Dataset):
         # Currently abusing __len__ to be variable. I am not sure why we
         # should let this represent an actual epoch size.
         return self.n_steps * self.batch_size
-
-
-# Not working.
-class TextLineDatasetLazy(Dataset):
-    def __init__(self, filename):
-        raise NotImplementedError
-        self.file = open(filename)
-        self.line_offsets = []
-        offset = 0
-        for line in self.file:
-            self.line_offsets.append(offset)
-            offset += len(line.strip())
-        self.file.seek(0)
-
-    def __getitem__(self, index):
-        # TODO: Is the selection too specific? Should we randomly slice lines here?
-        self.file.seek(self.line_offsets[index])
-        line = self.file.readline()
-        # return line
-        inp_text = unidecode(line[:-1])
-        target_text = unidecode(line[1:])
-        inp = char_tensor(inp_text)
-        target = char_tensor(target_text)
-        return inp, target
-
-    def __len__(self):
-        return len(self.line_offsets)
-
-
-# Not working with DataLoader (requires dynamic/padded batching!)
-class TextLineDataset(Dataset):
-    def __init__(self, filename):
-        raise NotImplementedError
-        with open(filename) as f:
-            self.lines = f.readlines()
-
-    def __getitem__(self, index):
-        # TODO: Is the selection too specific? Should we randomly slice lines here?
-        line = self.lines[index]
-        inp_text = unidecode(line[:-1])
-        target_text = unidecode(line[1:])
-        inp = char_tensor(inp_text)
-        target = char_tensor(target_text)
-        return inp, target
-
-    def __len__(self):
-        return len(self.lines)
 
 
 def train(inp, target):
@@ -238,7 +188,6 @@ train_loader = DataLoader(
 )
 
 if args.validation:
-    # TODO: Use dedicated validation data set
     val_data = TextChunkDataset(
         filename=args.validation,
         chunk_len=args.chunk_len,
@@ -265,7 +214,6 @@ min_loss = math.inf
 min_val_loss = math.inf
 
 print("Training for %d steps..." % args.n_steps)
-# try:
 for i, batch in enumerate(tqdm(train_loader)):
     inp, target = batch
     inp, target = Variable(inp), Variable(target)
@@ -316,10 +264,3 @@ for i, batch in enumerate(tqdm(train_loader)):
         print(f'\n"""\n{preview_text}\n"""\n')
         writer.add_text('Text', preview_text, i)
         writer.file_writer.flush()
-# except:
-#     import traceback
-#     traceback.print_exc()
-#     cont = False
-#     import IPython; IPython.embed()
-#     if not cont:
-#         raise SystemExit
