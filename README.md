@@ -2,7 +2,9 @@
 
 A Telegram bot that generates custom news articles on demand, based on a GRU Neural Network.
 
+
 ## Overview
+
 
 ### Neural network (`network/`)
 
@@ -32,11 +34,17 @@ Its "official" instance, trained with German news articles, is sometimes running
 
 ## Installation, usage and hosting
 
+
+### Setup
+
 For installation, you will need the [conda](https://conda.io/docs/) package manager.
 To install all dependencies for all parts of the project, just run the following commands in your source root:
 
     conda env create
     conda activate newsgeneratorbot
+
+
+### Training and testing the neural network
 
 You will then be able to train a new model with
 
@@ -45,11 +53,14 @@ You will then be able to train a new model with
 If there is a file in the same directory with the same name, but with "valid" instead of "train", this file will be automatically used as validation data.
 (For obtaining data sets, you can follow the section "Building a data set for training and validation" below or use your own text files. Just make sure they are at least a few hundred kilobytes big for good results.)
 
-The model with the best performing trainged parameter state will be saved to a `.pt` file in the CWD, with a file name based on your text data set file.
+The model with the best performing trained parameter state will be saved to a `.pt` file in the CWD, with a file name based on your text data set file.
 
 You can manually generate text from a trained model file by running
 
     python3 -m network.generate <path-to-model-file.pt>
+
+
+### Hosting the bot
 
 If you are satisfied with the generated text and want to run the bot with it, copy the model to `~/.newsgeneratorbot/content_model.pt`. If you also have trained a model for generating titles, place it in `~/.newsgeneratorbot/title_model.pt`.
 Generate your own Telegram bot API token by following the API [documentation](https://core.telegram.org/bots#6-botfather) and place the token into a file called `~/.newsgeneratorbot/token`.
@@ -61,6 +72,7 @@ All of the mentioned commands can be customized in many ways. To get an overview
 
 
 ## Building a data set for training and validation
+
 
 ### Scraping news websites
 
