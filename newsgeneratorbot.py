@@ -65,10 +65,35 @@ if not cli_args.disable_titles:
     logger.info('Sucessfully loaded title generator model.')
 
 
-def hello(bot, update):
-    update.message.reply_text(
-        'Hello {}'.format(update.message.from_user.first_name)
-    )
+STARTTEXT = """
+Hi, I am a news generator bot. I will generate short news articles for you \
+on demand, using a neural network.
+
+I am open source: https://github.com/mdraw/newsgeneratorbot.
+""".strip()
+
+HELPTEXT = """
+Instructions:
+
+To request a random freshly generated news article, just send "/w" and \
+you will receive one after about 2 seconds.
+
+You can optionally specify a writing prompt text that is used to prime the \
+title generator. The generated title is then used to prime the article \
+content generator, so the content is related to the title.
+To specify a writing prompt, just write it after the "/w" before sending \
+the request.
+E.g. if you want the title to start with "Donald T" and want me to complete \
+it to a full article, send "/w Donald T".
+""".strip()
+
+
+def start(bot, update):
+    update.message.reply_text(STARTTEXT + '\n\n' + HELPTEXT)
+
+
+def help(bot, update):
+    update.message.reply_text(HELPTEXT)
 
 
 def sanitize_html(text):
@@ -120,7 +145,6 @@ def generate_reply(prime_str):
     return full_text
 
 
-
 def write(bot, update, args):
     logger.info(f'New write request by {update.message.from_user.first_name}.')
     if args:
@@ -141,7 +165,6 @@ def write(bot, update, args):
         )
 
 
-
 def error(bot, update, error):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, error)
@@ -153,7 +176,8 @@ def main():
 
     dp = updater.dispatcher
 
-    dp.add_handler(CommandHandler('hello', hello))
+    dp.add_handler(CommandHandler('start', start))
+    dp.add_handler(CommandHandler('help', help))
     dp.add_handler(CommandHandler('w', write, pass_args=True))
 
     dp.add_error_handler(error)
