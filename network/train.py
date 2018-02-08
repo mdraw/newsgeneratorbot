@@ -30,7 +30,7 @@ parser.add_argument(
     action='store_true',
     help='Convert digraphs in the generated preview text to German umlauts.'
 )
-parser.add_argument('--hidden-size', type=int, default=600)
+parser.add_argument('--hidden-size', type=int, default=800)
 parser.add_argument('--n-layers', type=int, default=2)
 parser.add_argument('--dropout', type=float, default=0.0)
 parser.add_argument('--learning-rate', type=float, default=5e-3)
