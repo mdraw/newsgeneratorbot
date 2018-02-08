@@ -77,6 +77,7 @@ All of the mentioned commands can be customized in many ways. To get an overview
 
 ## Building a data set for training and validation
 
+For copyright reasons, I can't share the data sets that I created and used, but you can build your own data set easily by scraping websites:
 
 ### Scraping news websites
 
