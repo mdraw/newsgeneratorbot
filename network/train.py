@@ -10,7 +10,6 @@ import torch.nn as nn
 from torch.autograd import Variable
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
-from unidecode import unidecode
 from tensorboardX import SummaryWriter
 
 from network.generate import generate

@@ -1,5 +1,6 @@
 import random
 import string
+import warnings
 
 import torch
 
@@ -9,12 +10,22 @@ n_all_characters = len(all_characters)
 
 
 def char_tensor(s):
-    """Convert a Python string to a char tensor (as torch.LongTensor)"""
+    """Convert a Python string to a tensor.
+
+    The returned tensor is a 1-dimensional LongTensor that represents
+    each character as its index in the ASCII table. Its length is the same
+    as the string length. Characters that are not ASCII-encodable are ignored
+    during conversion.
+    """
     tensor = torch.zeros(len(s)).long()
     for c in range(len(s)):
         try:
+            # (PyTorch's CrossEntropyLoss implementation only supports
+            # LongTensors, so although the data could be encoded in 7 bits
+            # (-> ByteTensor), we have to use 64 bits (-> LongTensor) here.
             tensor[c] = all_characters.index(s[c])
         except:
+            warnings.warn(f'Skipping "{s[c]}" because it can\'t be encoded.')
             continue
     return tensor
 
@@ -41,7 +52,7 @@ german2ascii_dict = {
 
 
 def transliterate(text, mode='ascii2german', dictionary=german2ascii_dict):
-    """Transliterate German -> ascii with custom digraphs or vice versa."""
+    """Transliterate German -> ASCII with custom digraphs or vice versa."""
     trans = text
     for ger, asc in dictionary.items():
         if mode == 'german2ascii':
