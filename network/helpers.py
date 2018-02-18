@@ -16,6 +16,17 @@ def char_tensor(s):
     each character as its index in the ASCII table. Its length is the same
     as the string length. Characters that are not ASCII-encodable are ignored
     during conversion.
+
+    Note:
+        Unicode 10 (136.690 characters) can be fully represented in 18 bits,
+        and LongTensors (64 bits) have more than enough capacity for that.
+        The reason why Unicode can't be used directly here although the data
+        type would allow it is that the neural network's input and output
+        dimensions scale with the number of unique characters it needs to
+        recognize. Therefore the network size would be far too large (e.g.
+        the last Linear layer would have to at least have a
+        133690-dimensional output).
+        Maybe this problem can be solved with sparse embedding layers?
     """
     tensor = torch.zeros(len(s)).long()
     for c in range(len(s)):
@@ -24,8 +35,8 @@ def char_tensor(s):
             # LongTensors, so although the data could be encoded in 7 bits
             # (-> ByteTensor), we have to use 64 bits (-> LongTensor) here.
             tensor[c] = all_characters.index(s[c])
-        except:
-            warnings.warn(f'Skipping "{s[c]}" because it can\'t be encoded.')
+        except ValueError:
+            print(f'Skipping "{s[c]}" because it can\'t be encoded.')
             continue
     return tensor
 
