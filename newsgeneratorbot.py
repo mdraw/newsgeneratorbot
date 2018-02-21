@@ -4,10 +4,12 @@ import argparse
 import logging
 import os
 import traceback
+from uuid import uuid4
 
 import torch
 from telegram.parsemode import ParseMode
-from telegram.ext import Updater, CommandHandler
+from telegram.ext import Updater, CommandHandler, InlineQueryHandler
+from telegram import InlineQueryResultArticle, InputTextMessageContent
 
 from network.generate import generate
 from network.helpers import random_letter
@@ -165,6 +167,30 @@ def write(bot, update, args):
         )
 
 
+def inlinequery(bot, update):
+    logger.info(f'New inline request by {update.inline_query.from_user.first_name}.')
+    query = update.inline_query.query
+    if query:
+        prime_str = query
+    else:
+        prime_str = random_letter()
+
+    try:
+        full_text = generate_reply(prime_str)
+        logger.info(f'Replying with:\n"""\n{full_text}\n"""\n')
+        answer = InlineQueryResultArticle(
+            id=uuid4(),
+            title=f'Generate article ("{prime_str}...")',
+            input_message_content=InputTextMessageContent(
+                full_text, parse_mode=ParseMode.HTML
+            )
+        )
+        update.inline_query.answer([answer])
+    except:
+        traceback.print_exc()
+
+
+
 def error(bot, update, error):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, error)
@@ -179,6 +205,7 @@ def main():
     dp.add_handler(CommandHandler('start', start))
     dp.add_handler(CommandHandler('help', help))
     dp.add_handler(CommandHandler('w', write, pass_args=True))
+    dp.add_handler(InlineQueryHandler(inlinequery))
 
     dp.add_error_handler(error)
 
