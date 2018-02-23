@@ -25,29 +25,31 @@ def generate(
         prime_input = prime_input.cuda()
     predicted = prime_str
 
-    # Use priming string to "build up" hidden state
+    # Prime the hidden state so that the network is in the state of "just having read" prime_str.
     for p in range(len(prime_str) - 1):
         _, hidden = model(prime_input[:, p], hidden)
 
     inp = prime_input[:, -1]
 
+    # Recursively predict each the next char until predict_len is reached.
     for p in range(predict_len):
         output, hidden = model(inp, hidden)
 
         # Sample from the network as a multinomial distribution
+        # Divide by the temperature to give less probable character candidates a chance
         output_dist = output.data.view(-1).div(temperature).exp()
         top_i = torch.multinomial(output_dist, 1)[0]
 
         # Add predicted character to string and use as next input
-        predicted_char = all_characters[top_i]
-        predicted += predicted_char
-        if predicted_char == until_first:
+        predicted_char = all_characters[top_i]  # look up in the ASCII table and convert back to a python string
+        predicted += predicted_char  # Add to generated sequence
+        if predicted_char == until_first:  # If the limiter is reached.
             break
         inp = Variable(char_tensor(predicted_char).unsqueeze(0))
         if cuda:
             inp = inp.cuda()
 
-    if until_last is not None:
+    if until_last is not None:  # Cut of superfluous text
         if min_predict_len is None:
             min_predict_len = predict_len // 3
         if until_last is not None:
