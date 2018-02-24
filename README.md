@@ -40,7 +40,7 @@ Its "official" instance, trained with German news articles, is sometimes running
 For installation, you will need the [conda](https://conda.io/docs/) package manager.
 To install all dependencies for all parts of the project, just run the following commands in your source root:
 
-    conda env create
+    conda env create -f environment.yml
     conda activate newsgeneratorbot
 
 
@@ -81,9 +81,10 @@ For copyright reasons, I can't share the data sets that I created and used, but 
 
 ### Scraping news websites
 
+- `cd scripts`
 - For each news website `<url>` (e.g. https://rnz.de), run
 
-      python3 scrape_articles.py <url>
+      ./scrape_articles.py <url>
 
 - For each site name `<site>`, two files `<site>_content.txt` and `<site>_titles.txt` are saved in the CWD, each containing raw articles text contents and titles respectively.
 

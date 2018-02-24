@@ -91,10 +91,17 @@ it to a full article, send "/w Donald T".
 
 
 def start(bot, update):
+    """
+    This function is automatically called when starting a conversation
+    with the bot. It sends general info and instructions.
+    """
     update.message.reply_text(STARTTEXT + '\n\n' + HELPTEXT)
 
 
 def help(bot, update):
+    """
+    Send instructions when the user sends "/help".
+    """
     update.message.reply_text(HELPTEXT)
 
 
@@ -107,6 +114,16 @@ def sanitize_html(text):
 
 
 def generate_reply(prime_str):
+    """
+    Generates an article by means of the content (and optionally title-)generator
+    neural networks. If the CLI flag --disable-titles is active, only the
+    content generator queried. Otherwise, a title is generated, primed by the
+    prime_str. The generated title is then used to prime the content generator,
+    but it is then removed again from the generated content to avoid duplication.
+
+    :param prime_str: String that is used for priming the generated text.
+    :return: HTML string of that contains the full generated article (title + content)
+    """
     if not cli_args.disable_titles:
         generated_title = generate(
             model=title_rnn,
@@ -148,6 +165,14 @@ def generate_reply(prime_str):
 
 
 def write(bot, update, args):
+    """
+    This is called when a "/w" command (with optional args) is sent
+    to the bot. Sends a newly generated article to the user who requested it.
+    If "/w" is received without any args, a random start letter is chosen.
+
+    All args are interpreted as a writing prompt (prime_str)
+    for the title generator (or if --disable-titles, for the content generator).
+    """
     logger.info(f'New write request by {update.message.from_user.first_name}.')
     if args:
         prime_str = ' '.join(args)
@@ -168,6 +193,11 @@ def write(bot, update, args):
 
 
 def inlinequery(bot, update):
+    """
+    Handle inline queries from any conversation where a user writes
+    @NewsGeneratorBot. Works the same as the write() function above
+    in principle, but using the inline query args as a prime_str instead.
+    """
     logger.info(f'New inline request by {update.inline_query.from_user.first_name}.')
     query = update.inline_query.query
     if query:
@@ -188,7 +218,6 @@ def inlinequery(bot, update):
         update.inline_query.answer([answer])
     except:
         traceback.print_exc()
-
 
 
 def error(bot, update, error):
