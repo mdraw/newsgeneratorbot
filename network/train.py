@@ -246,7 +246,7 @@ if args.validation:
 
 # TensorboardX setup
 tb_name = model_name + '__' + timestamp
-tb_path = os.path.expanduser(f'/tmp/newsgeneratortraining/{tb_name}')  # TODO: Make this configurable
+tb_path = os.path.expanduser(f'~/ngtraining/{tb_name}')  # TODO: Make this configurable
 os.makedirs(tb_path)
 writer = SummaryWriter(tb_path)
 
